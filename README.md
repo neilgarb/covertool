@@ -17,3 +17,8 @@ Installation:
 ```shell
 go install github.com/neilgarb/covertool@latest
 ```
+
+Resources:
+
+- https://go.dev/testing/coverage
+- [ParseProfiles](https://github.com/golang/go/blob/0104a31b8fbcbe52728a08867b26415d282c35d2/src/cmd/cover/profile.go#L44) documentation
