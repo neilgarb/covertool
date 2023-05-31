@@ -1,4 +1,4 @@
-module github.com/luno/covertool
+module github.com/neilgarb/covertool
 
 go 1.20
 
