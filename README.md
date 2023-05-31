@@ -7,6 +7,9 @@ Example usage:
 ```shell
 go test -coverprofile=cover.out ./...
 covertool -profile=cover.out
+
+# Example output:
+total: (statements) 32.66%
 ```
 
 Installation:
