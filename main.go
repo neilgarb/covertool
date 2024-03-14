@@ -105,7 +105,7 @@ func run(fileName, baseDir string, traceFn func(string), groupRe *regexp.Regexp)
 		}
 	}
 
-	fmt.Printf("total: %s\n", total.coverPct())
+	fmt.Printf("total: (statements) %s\n", total.coverPct())
 
 	return nil
 }
