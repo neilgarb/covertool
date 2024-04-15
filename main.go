@@ -55,7 +55,9 @@ type bucket struct {
 
 func (b bucket) add(bl cover.ProfileBlock) bucket {
 	b.statements += bl.NumStmt
-	b.count += bl.Count
+	if bl.Count > 0 {
+		b.count += bl.NumStmt
+	}
 	return b
 }
 
