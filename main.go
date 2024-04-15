@@ -3,14 +3,11 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
 
 	"golang.org/x/tools/cover"
 )
@@ -76,12 +73,6 @@ func run(fileName, baseDir string, traceFn func(string), groupRe *regexp.Regexp)
 	var total bucket
 	buckets := make(map[string]bucket)
 	for _, profile := range profiles {
-		if gen, err := isGenerated(filepath.Join(baseDir, profile.FileName)); err != nil {
-			return err
-		} else if gen {
-			traceFn(fmt.Sprintf("Skipping %s", profile.FileName))
-			continue
-		}
 		for _, block := range profile.Blocks {
 			total = total.add(block)
 			if groupRe != nil {
@@ -110,24 +101,4 @@ func run(fileName, baseDir string, traceFn func(string), groupRe *regexp.Regexp)
 	fmt.Printf("total: (statements) %s\n", total.coverPct())
 
 	return nil
-}
-
-func isGenerated(path string) (bool, error) {
-	if !strings.HasSuffix(path, ".go") {
-		return false, nil
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return false, nil
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "//") && strings.Contains(scanner.Text(), "DO NOT EDIT") {
-			return true, scanner.Err()
-		}
-	}
-	return false, scanner.Err()
 }
