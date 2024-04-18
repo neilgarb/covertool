@@ -13,13 +13,15 @@ import (
 )
 
 func main() {
-	var fileName, baseDir string
+	var fileName string
 	var trace bool
 	var grouping string
+	var outPath string
+
 	flag.StringVar(&fileName, "profile", "", "Coverage profile produced by `go test -coverprofile`")
-	flag.StringVar(&baseDir, "base", ".", "Where to find the files in the coverage profile")
 	flag.BoolVar(&trace, "trace", false, "Output debug info")
 	flag.StringVar(&grouping, "grouping", "", "If provided, results will be matched against this regex, and grouped by the 1st grouped match, e.g. 'foo/([^/]*)/' will group foo/bar/baz as bar")
+	flag.StringVar(&outPath, "out", "", "If provided, results will be output to this file with this line format '[bucket] [total] [covered]'. This option requires grouping to be set.")
 	flag.Parse()
 
 	traceFn := func(string) {}
@@ -39,7 +41,7 @@ func main() {
 		groupRe = r
 	}
 
-	if err := run(fileName, baseDir, traceFn, groupRe); err != nil {
+	if err := run(fileName, outPath, traceFn, groupRe); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -65,7 +67,7 @@ func (b bucket) coverPct() string {
 	return fmt.Sprintf("%.2f%%", float64(b.count)/float64(b.statements)*100)
 }
 
-func run(fileName, baseDir string, traceFn func(string), groupRe *regexp.Regexp) error {
+func run(fileName, outPath string, traceFn func(string), groupRe *regexp.Regexp) error {
 	profiles, err := cover.ParseProfiles(fileName)
 	if err != nil {
 		return err
@@ -88,17 +90,39 @@ func run(fileName, baseDir string, traceFn func(string), groupRe *regexp.Regexp)
 	}
 
 	if len(buckets) > 0 {
-		sortedBuckets := make([]string, 0, len(buckets))
-		for name, b := range buckets {
-			sortedBuckets = append(sortedBuckets, fmt.Sprintf("%s: %s", name, b.coverPct()))
-		}
-		sort.Strings(sortedBuckets)
-		for _, b := range sortedBuckets {
-			fmt.Println(b)
+		if outPath != "" {
+			if err := writeReport(outPath, buckets); err != nil {
+				return err
+			}
+		} else {
+			sortedBuckets := make([]string, 0, len(buckets))
+			for name, b := range buckets {
+				sortedBuckets = append(sortedBuckets, fmt.Sprintf("%s: %s", name, b.coverPct()))
+			}
+			sort.Strings(sortedBuckets)
+			for _, b := range sortedBuckets {
+				fmt.Println(b)
+			}
 		}
 	}
 
 	fmt.Printf("total: (statements) %s\n", total.coverPct())
 
+	return nil
+}
+
+func writeReport(path string, buckets map[string]bucket) error {
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	for name, buck := range buckets {
+		_, err := fmt.Fprintln(f, name, buck.statements, buck.count)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
